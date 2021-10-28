@@ -4,6 +4,8 @@ import sys
 import os
 import logging
 
+import torch
+
 package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, package_root)
 
@@ -75,8 +77,10 @@ if __name__ == "__main__":
     _log.info("training with input files {} and node features {} and edge features {}"
               .format(hdf5_paths, node_features, edge_features))
 
+    torch.manual_seed(7432609565498794389263420134)
+
     nn = NeuralNet(database=hdf5_paths, Net=SimpleNet,
-                   cluster_nodes=None,
+                   cluster_nodes="louvain",
                    node_feature=node_features, edge_feature=edge_features,
                    target='bin_class', lr=learn_rate,
                    batch_size=64,

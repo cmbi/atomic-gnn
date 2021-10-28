@@ -156,9 +156,7 @@ def get_variant_data(parq_path, hdf5_path, pdb_root, pssm_root, queues):
     for variant_name, variant_class in variant_data:
 
         map_rows = mappings_table.loc[mappings_table.variant == variant_name].dropna()
-        for map_row in map_rows:
-
-            map_row = map_rows.iloc[0]
+        for _, map_row in map_rows.iterrows():
 
             enst_ac = variant_name[:15]
             swap = variant_name[15:]

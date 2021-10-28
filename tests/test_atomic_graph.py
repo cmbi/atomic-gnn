@@ -18,7 +18,7 @@ from do.network.simple import SimpleNet
 _log = logging.getLogger(__name__)
 
 
-node_features = ['charge', 'element', 'sasa', 'pos', 'wildtype', 'variant']
+node_features = ['charge', 'element', 'wildtype', 'variant']
 edge_features = ['dist', 'coulomb', 'vanderwaals']
 
 
@@ -64,7 +64,7 @@ def test_loadable():
         data = dataset.get(0)
 
         nn = NeuralNet([hdf5_path], SimpleNet,
-                       cluster_nodes=None,
+                       cluster_nodes="louvain",
                        node_feature=node_features, edge_feature=edge_features,
                        target='bin_class',
                        batch_size=64,

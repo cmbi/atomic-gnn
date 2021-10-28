@@ -11,12 +11,11 @@ from torch_scatter import scatter_max, scatter_mean
 from deeprank_gnn.community_pooling import community_detection, community_pooling
 
 from do.models.pair import Pair
-from do.domain.graph import POSITION_FEATURE_NAME, EDGETYPE_FEATURE_NAME, EDGETYPE_ENCODING
+from do.domain.graph import EDGETYPE_FEATURE_NAME, EDGETYPE_ENCODING
 from do.operate.hdf5data import get_variant_group_name, store_variant
 from do.operate.pdb import get_squared_distance, get_distance, get_residue_contact_atom_pairs
 from do.operate.graph import graph_to_data, data_to_deeprank_hdf5
 from do.domain.forcefield import atomic_forcefield
-from do.profile import time_profile
 from do.parse.pssm import parse_pssm
 from do.domain.amino_acid import amino_acids
 
@@ -43,8 +42,9 @@ AMINO_ACID_NN_REPRESENTATIONS = _make_label_one_hots(amino_acids)
 EDGENAME_BONDED = "bonded"
 EDGENAME_NONBONDED = "nonbonded"
 
+POSITION_FEATURE_NAME = "pos"
 
-@time_profile
+
 def _add_pssm(graph, variant):
     pssms = {}
     for chain_id in variant.get_pssm_chains():
@@ -79,7 +79,6 @@ def _add_pssm(graph, variant):
             raise ValueError("{} is missing from {}".format(residue, variant.get_pssm_path(chain_id)))
 
 
-@time_profile
 def _add_sasa(graph, pdb_path):
     structure = freesasa.Structure(pdb_path)
     result = freesasa.calc(structure)
@@ -97,7 +96,6 @@ def _add_sasa(graph, pdb_path):
         graph.nodes[atom]['sasa'] = area
 
 
-@time_profile
 def _cluster(graph_data, entry_group):
     clustering_group = entry_group.create_group("clustering")
 
@@ -118,7 +116,7 @@ def _cluster(graph_data, entry_group):
     method_group.create_dataset('depth_1', data=cluster1)
 
 
-_MAX_BONDED_DISTANCE = 1.6
+_MAX_BONDED_DISTANCE = 1.9
 _MAX_BONDED_DISTANCE_SS = 2.2
 _MAX_NONBONDED_DISTANCE = 10.0
 
@@ -130,14 +128,10 @@ _MAX_SQUARED_NONBONDED_DISTANCE = numpy.square(_MAX_NONBONDED_DISTANCE)
 def _build_graph(variant, radius_around_variant):
 
     # extract pdb data
-    t0 = time()
     pdb = pdb2sql(variant.pdb_path)
     try:
         _log.debug("looking for nearby atoms..")
         involved_atom_pairs = get_residue_contact_atom_pairs(pdb, variant.chain_id, variant.residue_number, radius_around_variant)
-
-        t1 = time()
-        _log.debug("took {} seconds to find nearby atoms".format(t1 - t0))
 
         # list all the involved atoms and chain ids
         all_atoms = set([])
@@ -180,7 +174,7 @@ def _build_graph(variant, radius_around_variant):
                     graph.edges[atom1, atom2]["coulomb"] = atomic_forcefield.get_coulomb_energy(atom1, atom2)
                     graph.edges[atom1, atom2]["vanderwaals"] = atomic_forcefield.get_vanderwaals_energy(atom1, atom2)
 
-                elif (variant.is_at(atom1.residue) or variant.is_at(atom2.residue)) and squared_distance < _MAX_SQUARED_NONBONDED_DISTANCE:
+                elif squared_distance < _MAX_SQUARED_NONBONDED_DISTANCE:
 
                     distance = get_distance(atom1.position, atom2.position)
 
@@ -190,16 +184,13 @@ def _build_graph(variant, radius_around_variant):
                     graph.edges[atom1, atom2]["coulomb"] = atomic_forcefield.get_coulomb_energy(atom1, atom2)
                     graph.edges[atom1, atom2]["vanderwaals"] = atomic_forcefield.get_vanderwaals_energy(atom1, atom2)
 
-    t4 = time()
-    _log.debug("took {} seconds to find edges + features".format(t4 - t1))
-
     # add features to nodes
     _log.debug("adding node features..")
     chain_nn_representations = {chain_id: index for index, chain_id in enumerate(all_chains)}
     for atom, atom_node in graph.nodes.items():
-        atom_node[POSITION_FEATURE_NAME] = atom.position
         atom_node["element"] = ELEMENT_NN_REPRESENTATIONS[atom.element]
         atom_node["chain"] = chain_nn_representations[atom.chain_id]
+        atom_node[POSITION_FEATURE_NAME] = atom.position
 
         if variant.is_at(atom.residue):
 
@@ -214,9 +205,6 @@ def _build_graph(variant, radius_around_variant):
             raise ValueError("got NaN charge for {}:{}".format(variant.pdb_path, atom))
 
         atom_node["charge"] = atomic_forcefield.get_charge(atom)
-
-    t5 = time()
-    _log.debug("took {} seconds to add node features".format(t5 - t4))
 
     return graph
 
@@ -235,7 +223,7 @@ def add_as_graph(variant, hdf5_path, radius_around_variant=10.0):
     deeprank_graph = _build_graph(variant, radius_around_variant)
 
     # add additional features
-    _add_sasa(deeprank_graph, variant.pdb_path)
+    #_add_sasa(deeprank_graph, variant.pdb_path)
 
     if variant.has_pssm():
         _add_pssm(deeprank_graph, variant)
@@ -254,6 +242,9 @@ def add_as_graph(variant, hdf5_path, radius_around_variant=10.0):
             data_to_deeprank_hdf5(graph_data, entry_group,
                                   edge_type_chosen=EDGENAME_NONBONDED,
                                   internal_edge_type_chosen=EDGENAME_BONDED)
+
+            # write cluster data
+            _cluster(graph_data, entry_group)
 
             # write the variant class to the hdf5 entry
             if variant.variant_class is not None:
