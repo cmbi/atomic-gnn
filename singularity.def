@@ -1,0 +1,11 @@
+Bootstrap: docker
+From: python:3.8
+
+%post
+    apt update && apt install -y git
+    pip install torch
+    git clone https://github.com/DeepRank/Deeprank-GNN.git
+    cd Deeprank-GNN
+    pip install -e .
+    cd ..
+    pip install freesasa pyarrow fastparquet tables matplotlib
