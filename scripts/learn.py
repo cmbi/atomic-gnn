@@ -89,3 +89,4 @@ if __name__ == "__main__":
 
     nn.train(nepoch=epoch_count, validate=True, save_epoch="all")
 
+    # it will generate an output file named train_data.hdf5

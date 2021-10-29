@@ -13,6 +13,8 @@ _log = logging.getLogger(__name__)
 
 
 def choose_data_type(value):
+    "gives a numpy data type for a particular value, compatible with deeprank"
+
     if type(value) == numpy.ndarray:
         return value.dtype
 
@@ -33,6 +35,8 @@ def choose_data_type(value):
 
 
 def get_node_name(node):
+    "gives a name for each type of node"
+
     if type(node) == Atom:
         return "{}:{}".format(get_node_name(node.residue), node.name)
 

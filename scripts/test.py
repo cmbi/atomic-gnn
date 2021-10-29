@@ -87,3 +87,5 @@ if __name__ == "__main__":
     nn.model.load_state_dict(nn.model_load_state_dict)
 
     nn.test(test_hdf5_paths, threshold=nn.classes[1])
+
+    # it will generate an output file named test_data.hdf5 ..

@@ -24,6 +24,11 @@ edge_features = ['dist', 'coulomb', 'vanderwaals']
 
 def test_loadable():
 
+    # Tests that:
+    # - the atomic graph builder can output a readable hdf5 file
+    # - the hdf5 file fits into a Dataset object
+    # - the neural network can train on it
+
     tmp_dir = mkdtemp()
     try:
         pdb_path = "tests/data/101M.pdb"
@@ -37,6 +42,8 @@ def test_loadable():
             add_as_graph(variant, hdf5_path)
 
         with h5py.File(hdf5_path, 'r') as f:
+            # Check the contents of the hdf5 file
+
             entry_name = list(f.keys())[0]
 
             edge_indices = f["{}/edge_index".format(entry_name)][()]
@@ -59,8 +66,8 @@ def test_loadable():
                 internal_edge_data = f["{}/internal_edge_data/{}".format(entry_name, internal_edge_feature_name)][()]
                 assert internal_edge_data.size > 0, "{} internal edge data is empty".format(internal_edge_feature_name)
 
+        # check that we can give it to a neural net
         dataset = HDF5DataSet(database=[hdf5_path], clustering_method="louvain")
-
         data = dataset.get(0)
 
         nn = NeuralNet([hdf5_path], SimpleNet,
@@ -74,4 +81,4 @@ def test_loadable():
         nn.train(nepoch=1, validate=True)
 
     finally:
-        rmtree(tmp_dir)
+        rmtree(tmp_dir)  # clean up all the generated files

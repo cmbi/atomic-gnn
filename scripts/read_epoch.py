@@ -11,6 +11,11 @@ _log = logging.getLogger(__name__)
 
 
 def get_epoch_metrics(hdf5_path, csv_path):
+    """
+        Deeprank-GNN outputs hdf5 files, containing the predicted class values.
+        This function counts the number of correctly predicted classes and
+        outputs the accuracy values to the hdf5 file
+    """
 
     with h5py.File(hdf5_path, 'r') as fi:
 

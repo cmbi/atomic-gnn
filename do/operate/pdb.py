@@ -5,7 +5,6 @@ import numpy
 from do.models.pair import Pair
 from do.models.atom import Atom
 from do.models.residue import Residue
-from do.domain.bonds import get_bond_data
 
 _log = logging.getLogger(__name__)
 
@@ -74,58 +73,6 @@ def get_atoms(pdb2sql):
         atoms.append(atom)
 
     return atoms
-
-
-def get_covalent_bonds(atoms, distance_cutoff=3.0):
-    """ Lists the bonds between atoms using a knowledge-based neighbour approach
-
-        Args:
-            atoms (list(Atom)): the atoms of the pdb structure that we're investigating
-            distance_cutoff (float): maximum distance between two atoms in Angstrom
-
-        Returns ([Pair(int, int)]): pairs of atom numbers that bond each other
-    """
-
-    bonds = set([])
-
-    squared_cutoff = distance_cutoff * distance_cutoff
-
-    residues = sorted({atom.residue for atom in atoms},
-                      key=lambda residue: (residue.chain_id, residue.number, residue.insertion_code))
-
-    amino_acid_codes = {residue.name for residue in residues}
-    allowed_bond_data = {amino_acid_code: get_bond_data(amino_acid_code) for amino_acid_code in amino_acid_codes}
-
-
-    for residue_index, residue in enumerate(residues):
-        allowed_bond_name_pairs = {obj.atom_names for obj in allowed_bond_data[residue.name]}
-
-        for atom1_index, atom1 in enumerate(residue.atoms):
-            for atom2 in residue.atoms[atom1_index + 1:]:
-                name_pair = Pair(atom1.name, atom2.name)
-                squared_distance = numpy.sum(numpy.square(atom1.position - atom2.position))
-                if squared_distance < squared_cutoff and name_pair in allowed_bond_name_pairs:
-                    bonds.add(Pair(atom1, atom2))
-
-            if atom1.name == "N" and residue_index > 0:  # petide bonds
-                previous_residue = residues[residue_index - 1]
-                for atom2 in [atom for atom in previous_residue.atoms if atom.name == "C"]:
-                    name_pair = Pair(atom1.name, atom2.name)
-                    squared_distance = numpy.sum(numpy.square(atom1.position - atom2.position))
-                    if squared_distance < squared_cutoff:
-                        bonds.add(Pair(atom1, atom2))
-
-            elif atom1.name == "SG":  # disulfid bonds
-                for atom2 in [atom for atom in atoms if atom.name == "SG"]:
-                    if atom1 == atom2:
-                        continue  # don't bond a cysteine with itself
-
-                    name_pair = Pair(atom1.name, atom2.name)
-                    squared_distance = numpy.sum(numpy.square(atom1.position - atom2.position))
-                    if squared_distance < squared_cutoff:
-                        bonds.add(Pair(atom1, atom2))
-
-    return bonds
 
 
 def get_residue_contact_atom_pairs(pdb2sql, chain_id, residue_number, max_interatomic_distance):

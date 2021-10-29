@@ -22,6 +22,7 @@ if __name__ == "__main__":
                                   {"A": "tests/data/pssm/1ATN/1ATN.A.pdb.pssm",
                                    "B": "tests/data/pssm/1ATN/1ATN.B.pdb.pssm"}, VariantClass.PATHOGENIC)
 
+    # Generate one atomic graph file, to inspect manually
     hdf5_path = "test_atomic.hdf5"
 
     if os.path.isfile(hdf5_path):
