@@ -1,6 +1,8 @@
 
 
 class AminoAcid:
+    "an amino acide object, distinguishable by its name"
+
     def __init__(self, name, code, letter):
         self.name = name
         self.code = code

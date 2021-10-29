@@ -16,7 +16,6 @@ from do.operate.hdf5data import get_variant_group_name, store_variant
 from do.operate.pdb import get_squared_distance, get_distance, get_residue_contact_atom_pairs
 from do.operate.graph import graph_to_data, data_to_deeprank_hdf5
 from do.domain.forcefield import atomic_forcefield
-from do.profile import time_profile
 from do.parse.pssm import parse_pssm
 from do.domain.amino_acid import amino_acids
 
@@ -44,8 +43,10 @@ EDGENAME_BONDED = "bonded"
 EDGENAME_NONBONDED = "nonbonded"
 
 
-@time_profile
 def _add_pssm(graph, variant):
+
+    # add pssm data to the graph
+
     pssms = {}
     for chain_id in variant.get_pssm_chains():
         pssm_path = variant.get_pssm_path(chain_id)
@@ -71,6 +72,8 @@ def _add_pssm(graph, variant):
             wildtype_amino_acid = amino_acid
             variant_amino_acid = amino_acid
 
+        # For the residues that are not changed, wildtype_conservation and variant_conservation will be the same.
+
         if pssm.has_residue(residue):
             graph.nodes[atom]['wildtype_conservation'] = pssm.get_conservation(residue, wildtype_amino_acid)
             graph.nodes[atom]['variant_conservation'] = pssm.get_conservation(residue, variant_amino_acid)
@@ -79,8 +82,10 @@ def _add_pssm(graph, variant):
             raise ValueError("{} is missing from {}".format(residue, variant.get_pssm_path(chain_id)))
 
 
-@time_profile
 def _add_sasa(graph, pdb_path):
+
+    # Give the pdb to freesasa and map its output to the graph.
+
     structure = freesasa.Structure(pdb_path)
     result = freesasa.calc(structure)
 
@@ -97,8 +102,10 @@ def _add_sasa(graph, pdb_path):
         graph.nodes[atom]['sasa'] = area
 
 
-@time_profile
 def _cluster(graph_data, entry_group):
+
+    # Do clustering as in Deeprank-GNN
+
     clustering_group = entry_group.create_group("clustering")
 
     method_name = "louvain"
@@ -106,8 +113,6 @@ def _cluster(graph_data, entry_group):
     method_group = clustering_group.create_group(method_name)
 
     data = graph_data.as_torch(EDGENAME_NONBONDED, EDGENAME_BONDED, POSITION_FEATURE_NAME)
-
-    # as in deeprank:
 
     cluster0 = community_detection(data.internal_edge_index, data.num_nodes, method=method_name)
     method_group.create_dataset('depth_0', data=cluster0)
@@ -240,6 +245,7 @@ def add_as_graph(variant, hdf5_path, radius_around_variant=10.0):
     if variant.has_pssm():
         _add_pssm(deeprank_graph, variant)
 
+    # store the networkx graph in numpy arrays
     graph_data = graph_to_data(deeprank_graph)
 
     with h5py.File(hdf5_path, 'a') as hdf5_file:

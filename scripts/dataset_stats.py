@@ -5,6 +5,7 @@ import h5py
 
 
 def read(data_paths):
+    "read the contents of the data paths and count the class values"
 
     class_value_counts = {}
     for data_path in data_paths:

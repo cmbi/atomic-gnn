@@ -15,6 +15,8 @@ _log = logging.getLogger(__name__)
 
 
 def download(three_letter_code, path):
+    "downloads the bond information for a particular amino acid"
+
     with request.urlopen("https://www.ebi.ac.uk/pdbe-srv/pdbechem/bond/list/%s" % three_letter_code.upper()) as f:
         html = f.read().decode("ascii")
 
@@ -36,6 +38,7 @@ def download(three_letter_code, path):
 
     thead, tbody = table
 
+    # Convert the html table to a csv file:
     with open(path, 'wt') as f:
         w = csv.writer(f, delimiter=',')
 
