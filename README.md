@@ -13,14 +13,14 @@
  - Deeprank-GNN
 
 ## preprocessing data from bio-prodict
-$ python scrips/preprocess_bioprodict.py path_to_variants_parq path_to_pdb_mappings_hdf5 path_to_pdb_files path_to_pssm_files output_file_prefix --process_count 10
+`python scrips/preprocess_bioprodict.py path_to_variants_parq path_to_pdb_mappings_hdf5 path_to_pdb_files path_to_pssm_files output_file_prefix --process_count 10`
 
 ## train on preprocessed hdf5 files
-$ python scripts/learn.py paths_to_preprocessed_hdf5_files* -f charge,sasa,wildtype,variant -a dist
+`python scripts/learn.py paths_to_preprocessed_hdf5_files* -f charge,sasa,wildtype,variant -a dist`
 
 This will also create a model pth file
 
 
 ## test on preprocessed hdf5 files
-$ python scripts/test.py path_to_model_pth paths_to_preprocessed_hdf5_files* -f charge,sasa,wildtype,variant -a dist
+`python scripts/test.py path_to_model_pth paths_to_preprocessed_hdf5_files* -f charge,sasa,wildtype,variant -a dist`
 
