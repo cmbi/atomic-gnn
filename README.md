@@ -24,3 +24,8 @@ This will also create a model pth file
 ## test on preprocessed hdf5 files
 `python scripts/test.py path_to_model_pth paths_to_preprocessed_hdf5_files* -f charge,sasa,wildtype,variant -a dist`
 
+## calculating metrics
+`python read_epoch.py results_path metrics_path`
+
+This script needs the output HDF5 from a train or test run.
+It will create a CSV table, containing metrics.

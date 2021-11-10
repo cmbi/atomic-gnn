@@ -4,6 +4,12 @@ import sys
 import h5py
 import logging
 import csv
+from argparse import ArgumentParser
+
+
+arg_parser = ArgumentParser(description="calculate accuracies from deeprank output data")
+arg_parser.add_argument("results_path", help="path to hdf5 file, output by Deeprank-GNN during training/testing")
+arg_parser.add_argument("accuracy_path", help="path to csv file, where to store the accuracies")
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -66,4 +72,6 @@ def get_epoch_metrics(hdf5_path, csv_path):
                     w.writerow([epoch_number, accs['train'], accs['eval'], accs['test']])
 
 if __name__ == "__main__":
-    get_epoch_metrics(sys.argv[1], sys.argv[2])
+    args = arg_parser.parse_args()
+
+    get_epoch_metrics(args.results_path, args.accuracy_path)
