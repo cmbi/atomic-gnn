@@ -25,7 +25,7 @@ def test_pssm_parse_2():
 
 
 def test_pssm_pdb():
-    pdb = pdb2sql("tests/data/pdb/1CRN.pdb")
+    pdb = pdb2sql("tests/data/1CRN.pdb")
     try:
         atoms = get_atoms(pdb)
     finally:
