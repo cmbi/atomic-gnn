@@ -2,6 +2,9 @@
 *__pycache__*
 *.pyc
 
+# logs
+*.log
+
 # deeprank-generated html
 temp-plot*.html
 
