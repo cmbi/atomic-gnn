@@ -116,9 +116,10 @@ def pdb_meets_criteria(pdb_path):
         _log.warning("no such pdb: {}".format(pdb_path))
         return False
 
-    if not is_xray(pdb_path):
-        _log.warning("not an xray structure: {}".format(pdb_path))
-        return False
+    with open(pdb_path, 'rt') as f:
+        if not is_xray(f):
+            _log.warning("not an xray structure: {}".format(pdb_path))
+            return False
 
     return True
 
