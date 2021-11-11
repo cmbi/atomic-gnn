@@ -10,7 +10,7 @@ RUN pip install torch
 RUN git clone https://github.com/DeepRank/Deeprank-GNN.git
 WORKDIR Deeprank-GNN
 RUN pip install -e .
-RUN pip install freesasa pyarrow fastparquet tables
+RUN pip install freesasa pyarrow fastparquet tables nose
 
 COPY . /usr/src/app
 WORKDIR /usr/src/app

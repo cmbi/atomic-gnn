@@ -46,6 +46,7 @@ logging.basicConfig(filename="preprocess_bioprodict-%d.log" % os.getpid(), filem
 _log = logging.getLogger(__name__)
 
 
+
 class Preprocess(Process):
     "process that runs the preprocessing function"
 
@@ -167,7 +168,7 @@ def get_variant_data(parq_path, hdf5_path, pdb_root, pssm_root, queues):
         variant_data.append((variant_name, variant_class))
 
     # Get all mappings to pdb and use them to create variant objects:
-    objects = set([])
+    objects_added = set([])
     for variant_name, variant_class in variant_data:
 
         map_rows = mappings_table.loc[mappings_table.variant == variant_name].dropna()
@@ -207,8 +208,11 @@ def get_variant_data(parq_path, hdf5_path, pdb_root, pssm_root, queues):
                                     amino_acids_by_code[var_amino_acid_code],
                                     pssm_paths, variant_class)
 
-            _log.debug("add variant job for {}".format(o))
-            queues[variant_class].put(o)
+            # the dataset can contain double variants, add this check to be sure the variants are unique:
+            if o not in objects_added:
+                _log.debug("add variant job for {}".format(o))
+                queues[variant_class].put(o)
+                objects_added.add(o)
 
 
 if __name__ == "__main__":

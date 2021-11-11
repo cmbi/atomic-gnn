@@ -8,4 +8,4 @@ From: python:3.8
     cd Deeprank-GNN
     pip install -e .
     cd ..
-    pip install freesasa pyarrow fastparquet tables matplotlib
+    pip install freesasa pyarrow fastparquet tables matplotlib nose
