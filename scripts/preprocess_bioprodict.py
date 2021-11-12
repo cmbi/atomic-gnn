@@ -126,7 +126,15 @@ def pdb_meets_criteria(pdb_path):
 
 
 def pick_pdbs(mappings, max_count):
-    "selects pdb entries by looking at the accession code alone"
+    """
+    Selects pdb entries from mappings by looking at the accession code alone
+
+    Args:
+        mappings(pandas.DataFrame): the pdb mappings to select from
+        max_count(int): the max number of mappings to select
+
+    Returns (list of tuples): pdb accession code, chain id, residue number, insertion code
+    """
 
     keep = []
     seen = set([])
