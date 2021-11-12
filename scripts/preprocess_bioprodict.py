@@ -125,6 +125,40 @@ def pdb_meets_criteria(pdb_path):
     return True
 
 
+def pick_pdbs(mappings, max_count):
+    "selects pdb entries by looking at the accession code alone"
+
+    keep = []
+    seen = set([])
+
+    for _, row in mappings.iterrows():
+        pdb_ac_string = row["pdb_structure"]
+        pdb_number_string = row["pdbnumber"]
+
+        pdb_ac = pdb_ac_string[:4]
+        pdb_chain = pdb_ac_string[4]
+
+        if pdb_ac in seen:
+            continue  # this is a duplicate homomer
+
+        seen.add(pdb_ac)
+
+        if pdb_number_string[-1].isalpha():
+
+            pdb_number = int(pdb_number_string[:-1])
+            insertion_code = pdb_number_string[-1]
+        else:
+            pdb_number = int(pdb_number_string)
+            insertion_code = None
+
+        keep.append((pdb_ac, pdb_chain, pdb_number, insertion_code))
+
+        if len(keep) > max_count:
+            break
+
+    return keep
+
+
 def get_variant_data(parq_path, hdf5_path, pdb_root, pssm_root, queues):
     """ Extract data from the dataset and convert to variant objects.
 
@@ -171,28 +205,14 @@ def get_variant_data(parq_path, hdf5_path, pdb_root, pssm_root, queues):
     objects_added = set([])
     for variant_name, variant_class in variant_data:
 
+        enst_ac = variant_name[:15]
+        swap = variant_name[15:]
+        wt_amino_acid_code = swap[:3]
+        residue_number = int(swap[3: -3])
+        var_amino_acid_code = swap[-3:]
+
         map_rows = mappings_table.loc[mappings_table.variant == variant_name].dropna()
-        for map_row in map_rows:
-
-            map_row = map_rows.iloc[0]
-
-            enst_ac = variant_name[:15]
-            swap = variant_name[15:]
-            wt_amino_acid_code = swap[:3]
-            residue_number = int(swap[3: -3])
-            var_amino_acid_code = swap[-3:]
-
-            pdb_ac = map_row["pdb_structure"]
-            pdb_number_s = map_row["pdbnumber"]
-            if pdb_number_s[-1].isalpha():
-                insertion_code = pdb_number_s[-1]
-                pdb_number = int(pdb_number_s[:-1])
-            else:
-                insertion_code = None
-                pdb_number = int(pdb_number_s)
-
-            chain_id = pdb_ac[4]
-            pdb_ac = pdb_ac[:4]
+        for pdb_ac, chain_id, pdb_number, insertion_code in pick_pdbs(map_rows, 20):
 
             pdb_path = os.path.join(pdb_root, "pdb%s.ent" % pdb_ac.lower())
             if not pdb_meets_criteria(pdb_path):
