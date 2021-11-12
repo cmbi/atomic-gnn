@@ -18,7 +18,6 @@ import h5py
 import numpy
 import pandas
 import csv
-from Bio import SeqIO
 import h5py
 from pdb2sql import pdb2sql
 import gzip
@@ -28,6 +27,7 @@ import gzip
 package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, package_root)
 
+from do.operate.pdb import is_xray
 from do.variant_atomic_graph import add_as_graph
 from do.models.variant import PdbVariantSelection, VariantClass
 from do.domain.amino_acid import amino_acids
@@ -110,6 +110,21 @@ def get_pssm_paths(pssm_root, pdb_ac):
     return d
 
 
+def pdb_meets_criteria(pdb_path):
+    "some criteria to filter pdb files by"
+
+    if not os.path.isfile(pdb_path):
+        _log.warning("no such pdb: {}".format(pdb_path))
+        return False
+
+    with open(pdb_path, 'rt') as f:
+        if not is_xray(f):
+            _log.warning("not an xray structure: {}".format(pdb_path))
+            return False
+
+    return True
+
+
 def get_variant_data(parq_path, hdf5_path, pdb_root, pssm_root, queues):
     """ Extract data from the dataset and convert to variant objects.
 
@@ -180,8 +195,7 @@ def get_variant_data(parq_path, hdf5_path, pdb_root, pssm_root, queues):
             pdb_ac = pdb_ac[:4]
 
             pdb_path = os.path.join(pdb_root, "pdb%s.ent" % pdb_ac.lower())
-            if not os.path.isfile(pdb_path):
-                _log.warning("no such pdb: {}".format(pdb_path))
+            if not pdb_meets_criteria(pdb_path):
                 continue
 
             pssm_paths = get_pssm_paths(pssm_root, pdb_ac)

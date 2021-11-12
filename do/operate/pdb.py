@@ -9,6 +9,16 @@ from do.models.residue import Residue
 _log = logging.getLogger(__name__)
 
 
+def is_xray(pdb_file):
+    "check that an open pdb file is an x-ray structure"
+
+    for line in pdb_file:
+        if line.startswith("EXPDTA") and "X-RAY DIFFRACTION" in line:
+            return True
+
+    return False
+
+
 def get_distance(position1, position2):
     """ Get euclidean distance between two positions in space.
 
